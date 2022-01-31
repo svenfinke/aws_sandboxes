@@ -1,1 +1,4 @@
 terraform/.terraform
+terraform/changes.tfstate
+terraform/*.tfstate
+terraform/*.tfstate.backup
