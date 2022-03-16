@@ -10,4 +10,11 @@ terraform {
 # Configure the AWS Provider
 provider "aws" {
   region = "eu-central-1"
+  profile = "sva-org"
+}
+
+provider "aws" {
+  alias = "aws-master"
+  region = "eu-central-1"
+  profile = "sva"
 }

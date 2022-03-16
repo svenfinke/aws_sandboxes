@@ -3,5 +3,6 @@ terraform {
     bucket = "sva-cloud-sandboxes-poc-state"
     key    = "terraform"
     region = "eu-central-1"
+    profile = "sva-org"
   }
 }
