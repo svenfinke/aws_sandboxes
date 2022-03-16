@@ -1,5 +1,5 @@
 resource "aws_dynamodb_table" "sandboxes" {
-  name           = "GameScores"
+  name           = "Sandboxes"
   billing_mode   = "PROVISIONED"
   read_capacity  = 20
   write_capacity = 20
@@ -103,7 +103,7 @@ resource "aws_sfn_state_machine" "register_sandbox"{
       "Type": "Task",
       "Resource": "arn:aws:states:::dynamodb:putItem",
       "Parameters": {
-        "TableName": "GameScores",
+        "TableName": "Sandboxes",
         "Item": {
           "account_id": {
             "S.$": "$.account_id"
@@ -138,10 +138,11 @@ resource "aws_iam_role" "launch_sandbox"{
                 {
                     "Effect": "Allow",
                     "Action": [
-                        "dynamodb:GetItem"
+                        "dynamodb:Query"
                     ],
                     "Resource": [
-                        "*"
+                        aws_dynamodb_table.sandboxes.arn,
+                        "${aws_dynamodb_table.sandboxes.arn}/*"
                     ]
                 }
             ]
@@ -156,25 +157,37 @@ resource "aws_iam_role_policy_attachment" "launch_sandbox_xray" {
 
 resource "aws_sfn_state_machine" "launch_sandbox"{
     name = "launch_sandbox"
-    role_arn = aws_iam_role.register_sandbox.arn
+    role_arn = aws_iam_role.launch_sandbox.arn
 
     definition = <<EOF
 {
   "Comment": "Assign a sandbox to a user",
-  "StartAt": "GetAvaliableAccount",
+  "StartAt": "GetAvailableAccount",
   "States": {
-    "GetAvaliableAccount": {
-      "Type": "Pass",
-      "Next": "Choice"
+    "GetAvailableAccount": {
+      "Type": "Task",
+      "Next": "Choice",
+      "Parameters": {
+        "TableName": "Sandboxes",
+        "IndexName": "Launched",
+        "KeyConditionExpression": "launched = :False",
+        "ExpressionAttributeValues": {
+          ":False": {
+            "S": "false"
+          }
+        }
+      },
+      "Resource": "arn:aws:states:::aws-sdk:dynamodb:query",
+      "ResultPath": "$.GetAvailableAccount"
     },
     "Choice": {
       "Type": "Choice",
       "Choices": [
         {
-          "Variable": "$.account_id",
-          "IsPresent": true,
-          "Next": "GrantPermissions",
-          "Comment": "Account found"
+          "Variable": "$.GetAvailableAccount.Count",
+          "NumericGreaterThan": 0,
+          "Comment": "Account found",
+          "Next": "GrantPermissions"
         }
       ],
       "Default": "NotifyFailure"
