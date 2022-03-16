@@ -1,3 +1,12 @@
+######################################################################
+### Create Permissions in the SSO account
+######################################################################
+
+
+
+######################################################################
+### Create Stepfunctions and DynamoDB Database to manage Sandboxes
+######################################################################
 resource "aws_dynamodb_table" "sandboxes" {
   name           = "Sandboxes"
   billing_mode   = "PROVISIONED"
