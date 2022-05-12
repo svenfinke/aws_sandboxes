@@ -227,3 +227,96 @@ resource "aws_sfn_state_machine" "launch_sandbox"{
 }
 EOF
 }
+
+resource "aws_iam_role" "shutdown_sandbox"{
+    name = "shutdown_sandbox_service"
+    assume_role_policy = data.aws_iam_policy_document.stepfucntion_assume_role_policy.json
+
+    inline_policy {
+        name="shutdown_sandbox_role"
+        policy=jsonencode({
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Action": [
+                        "dynamodb:Query"
+                    ],
+                    "Resource": [
+                        aws_dynamodb_table.sandboxes.arn,
+                        "${aws_dynamodb_table.sandboxes.arn}/*"
+                    ]
+                }
+            ]
+        })
+    }
+}
+
+resource "aws_iam_role_policy_attachment" "shutdown_sandbox_xray" {
+    role = aws_iam_role.shutdown_sandbox.name
+    policy_arn = aws_iam_policy.stepfunction_xray.arn
+}
+
+resource "aws_sfn_state_machine" "shutdown_sandbox"{
+    name = "shutdown_sandbox"
+    role_arn = aws_iam_role.shutdown_sandbox.arn
+
+    definition = <<EOF
+{
+  "Comment": "Assign a sandbox to a user",
+  "StartAt": "GetAvailableAccount",
+  "States": {
+    "GetAvailableAccount": {
+      "Type": "Task",
+      "Next": "Choice",
+      "Parameters": {
+        "TableName": "Sandboxes",
+        "IndexName": "Launched",
+        "KeyConditionExpression": "launched = :False",
+        "ExpressionAttributeValues": {
+          ":False": {
+            "S": "false"
+          }
+        }
+      },
+      "Resource": "arn:aws:states:::aws-sdk:dynamodb:query",
+      "ResultPath": "$.GetAvailableAccount"
+    },
+    "Choice": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.GetAvailableAccount.Count",
+          "NumericGreaterThan": 0,
+          "Comment": "Account found",
+          "Next": "GrantPermissions"
+        }
+      ],
+      "Default": "NotifyFailure"
+    },
+    "NotifyFailure": {
+      "Type": "Pass",
+      "Next": "Fail"
+    },
+    "GrantPermissions": {
+      "Type": "Pass",
+      "Next": "UpdateDynamoDB"
+    },
+    "UpdateDynamoDB": {
+      "Type": "Pass",
+      "Next": "NotifySuccess"
+    },
+    "NotifySuccess": {
+      "Type": "Pass",
+      "Next": "Success"
+    },
+    "Success": {
+      "Type": "Succeed"
+    },
+    "Fail": {
+      "Type": "Fail"
+    }
+  }
+}
+EOF
+}

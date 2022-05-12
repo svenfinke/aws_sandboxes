@@ -1,4 +1,4 @@
-terraform/.terraform
-terraform/changes.tfstate
-terraform/*.tfstate
-terraform/*.tfstate.backup
+**/.terraform
+**/changes.tfstate
+**/*.tfstate
+**/*.tfstate.backup
