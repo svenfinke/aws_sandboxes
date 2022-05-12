@@ -1,6 +1,8 @@
 # AWS Sandboxes
 
-[![Known Vulnerabilities](https://snyk.io/test/github/svenfinke/aws_sandboxes/badge.svg)]
+[![Known Vulnerabilities](https://snyk.io/test/github/svenfinke/aws_sandboxes/badge.svg)](https://snyk.io/test/github/svenfinke/aws_sandboxes)
+
+
 
 Managing Accounts in AWS - or more so: creating and deleting accounts in AWS - can be a huge pain in the ass. A secure AWS Account should have MFA activated on the root credentials, security questions and contacts should be defined and to make sure the financial department is not hunting you down for dozens of separate invoices, you should change the name of the account owner - which defaults to the account name (WHY?). And this is only where the fun starts. Did you ever try tu unroll an account? No? Trust me. It's a lot of fun! To make matters even worse: Most of this is not possible with the API. So it has to be done manually. NICE.
 
