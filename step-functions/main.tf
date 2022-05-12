@@ -28,6 +28,12 @@ resource "aws_dynamodb_table" "sandboxes" {
     type = "S"
   }
 
+
+
+
+
+  
+
   attribute {
     name = "launched"
     type = "S"
